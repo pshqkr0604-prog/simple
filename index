@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>인카마트 가격표 (간단형)</title>
+  <style>
+    :root{--bg:#0b0f14;--card:#121821;--muted:#9fb3c8;--txt:#e8f0f7;--border:#1f2a38;}
+    *{box-sizing:border-box}
+    body{margin:0;background:#0b0f14;color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,Malgun Gothic,sans-serif}
+    .wrap{max-width:1100px;margin:28px auto;padding:0 12px}
+    h1{margin:0 0 12px 0;font-size:20px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #1b2431;padding:10px 8px;font-size:14px}
+    thead th{position:sticky;top:0;background:#0f1520;text-align:left}
+    td.right,th.right{text-align:right}
+    input.qty{width:80px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0c121a;color:var(--txt)}
+    tfoot td{font-weight:800}
+    .muted{color:var(--muted)}
+    .stock{font-size:12px;color:#b7c8d8}
+    .totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+    .box{background:#0f1520;border:1px solid var(--border);border-radius:10px;padding:10px}
+    .v{font-size:20px;font-weight:900}
+  
+    /* === Mobile-first compact view (<= 640px) === */
+    @media (max-width: 640px){
+      .wrap{max-width:720px;margin:16px auto;padding:0 10px}
+      h1{font-size:16px;margin-bottom:10px}
+      th,td{padding:10px 8px;font-size:15px}
+      input.qty{width:100%;padding:14px;border-radius:12px;font-size:18px}
+      .stock{display:none}
+
+      /* Hide unit price (KRW/USD/IDR) and per-row totals on mobile */
+      thead th:nth-child(2),
+      thead th:nth-child(3),
+      thead th:nth-child(4),
+      thead th:nth-child(6),
+      thead th:nth-child(7),
+      thead th:nth-child(8),
+      tbody td:nth-child(2),
+      tbody td:nth-child(3),
+      tbody td:nth-child(4),
+      tbody td:nth-child(6),
+      tbody td:nth-child(7),
+      tbody td:nth-child(8){
+        display:none;
+      }
+
+      /* Make "수량" column left-aligned next to 상품명 for better reachability */
+      thead th:nth-child(5){text-align:left}
+      tbody td:nth-child(5){text-align:left}
+
+      /* Totals layout: single column stack */
+      .totals{grid-template-columns:1fr;gap:6px}
+      .box{padding:12px}
+      .v{font-size:22px}
+    }
+
+  </style>
+<style>
+/* ===== UX FIXES (non-functional CSS only) ===== */
+
+/* 1) Quantity input: prevent shrinking, ensure visibility, mobile keypad */
+input.qty{
+  box-sizing:border-box;
+  display:block;
+  width:100%;
+  min-width:0;
+  min-height:44px;
+  height:48px;
+  padding:12px 14px;
+  font-size:18px; /* prevent iOS zoom */
+  line-height:1.2;
+  color:#111;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:12px;
+  -webkit-appearance:none;
+  appearance:none;
+}
+
+/* Remove number spinners */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{
+  -webkit-appearance:none; margin:0;
+}
+input[type=number]{ -moz-appearance:textfield; }
+
+/* Keep table stable while typing */
+table{ table-layout:auto; }
+td, th{ vertical-align:middle; }
+
+/* 2) Totals bar: sticky at top, single-row (3 currencies) */
+.totals{
+  position:sticky;
+  top:0;
+  z-index:999;
+  background:#fff;
+  padding:8px 10px;
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items:center;
+  gap:8px;
+  border-bottom:1px solid #eee;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+}
+
+/* Compact total boxes for a single line look */
+.totals .box{
+  margin:0;
+  padding:10px 12px;
+  border-radius:10px;
+}
+.totals .v{ font-size:18px; font-weight:700; }
+
+/* 3) Mobile refinements */
+@media (max-width: 640px){
+  /* Keep only qty visible beside name; (already hidden earlier) */
+  input.qty{ height:52px; font-size:20px; }
+
+  /* Ensure sticky totals stays on top on mobile as well */
+  .totals{ grid-template-columns: repeat(3, 1fr); }
+}
+
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🛒 인카마트 가격표 (수량만 입력하면 자동 합산)</h1>
+    <div class="card">
+      <div style="overflow:auto;max-height:75vh">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th style="width:40%">상품명</th>
+            <th class="right">단가(₩)</th>
+            <th class="right">단가($)</th>
+            <th class="right">단가(Rp)</th>
+            <th class="right">수량</th>
+            <th class="right">합계(₩)</th>
+            <th class="right">합계($)</th>
+            <th class="right">합계(Rp)</th>
+          </tr>
+        </thead>
+        <tbody id="body"></tbody>
+        <tfoot>
+          <tr>
+            <td class="right" colspan="5">총 합계</td>
+            <td class="right" id="sum-krw">₩ 0</td>
+            <td class="right" id="sum-usd">$ 0</td>
+            <td class="right" id="sum-idr">Rp 0</td>
+          </tr>
+        </tfoot>
+      </table>
+      </div>
+      <div class="totals">
+        <div class="box"><div class="muted">KRW 총합</div><div class="v" id="sum2-krw">₩ 0</div></div>
+        <div class="box"><div class="muted">USD 총합</div><div class="v" id="sum2-usd">$ 0</div></div>
+        <div class="box"><div class="muted">IDR 총합</div><div class="v" id="sum2-idr">Rp 0</div></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const PRODUCTS = [
+  {
+    "name": "맥주",
+    "krw": 2000.0,
+    "usd": 1.5,
+    "idr": 25000.0,
+    "stock": "150(144)"
+  },
+  {
+    "name": "WOCA 초콜릿",
+    "krw": 2500.0,
+    "usd": 2.0,
+    "idr": 30000.0,
+    "stock": "28"
+  },
+  {
+    "name": "YABA 캐슈넛",
+    "krw": 1500.0,
+    "usd": 1.0,
+    "idr": 20000.0,
+    "stock": "28"
+  },
+  {
+    "name": "YABA 그래놀라",
+    "krw": 2500.0,
+    "usd": 1.5,
+    "idr": 30000.0,
+    "stock": "28"
+  },
+  {
+    "name": "메루발리 코코넛칩",
+    "krw": 1500.0,
+    "usd": 1,
+    "idr": 20000.0,
+    "stock": "24"
+  },
+  {
+    "name": "큐텔라싱콘 감자칩",
+    "krw": 500.0,
+    "usd": 0.5,
+    "idr": 5000.0,
+    "stock": "24"
+  },
+  {
+    "name": "모든 음료",
+    "krw": 500.0,
+    "usd": 0.5,
+    "idr": 5000.0,
+    "stock": "24"
+  },
+  {
+    "name": "모든 작은 라면",
+    "krw": 1500.0,
+    "usd": 1.0,
+    "idr": 15000.0,
+    "stock": "18"
+  },
+  {
+    "name": "모든 큰라면",
+    "krw": 2000.0,
+    "usd": 1.5,
+    "idr": 25000.0,
+    "stock": "33"
+  },
+  {
+    "name": "엘립스 헤어오일",
+    "krw": 9000.0,
+    "usd": 6.0,
+    "idr": 10000.0,
+    "stock": "14"
+  },
+  {
+    "name": "텀블러 단일 구매시 검정 OR 흰색",
+    "krw": 20000.0,
+    "usd": 12.0,
+    "idr": 200000.0,
+    "stock": "nan"
+  },
+  {
+    "name": "텀블러 SET 구매시 검정 + 흰색",
+    "krw": 35000.0,
+    "usd": 20.0,
+    "idr": 350000.0,
+    "stock": "nan"
+  },
+  {
+    "name": "에코백",
+    "krw": 10000.0,
+    "usd": 7.0,
+    "idr": 100000.0,
+    "stock": "nan"
+  }
+];
+
+function fmtKRW(v){return '₩ ' + (Math.round(v)||0).toLocaleString('ko-KR');}
+function fmtUSD(v){return '$ ' + (Math.round((v+Number.EPSILON)*100)/100).toLocaleString('en-US');}
+function fmtIDR(v){return 'Rp ' + (Math.round(v)||0).toLocaleString('id-ID');}
+
+function rowHTML(p, i){
+  return `
+    <tr>
+      <td>
+        <div>${p.name}</div>
+        ${p.stock?`<div class="stock">재고: ${p.stock}</div>`:''}
+      </td>
+      <td class="right">${p.krw!=null?fmtKRW(p.krw):'-'}</td>
+      <td class="right">${p.usd!=null?fmtUSD(p.usd):'-'}</td>
+      <td class="right">${p.idr!=null?fmtIDR(p.idr):'-'}</td>
+      <td class="right"><input class="qty" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" value="0" data-i="${i}" oninput="recalc()" /></td>
+      <td class="right" id="r-krw-${i}">₩ 0</td>
+      <td class="right" id="r-usd-${i}">$ 0</td>
+      <td class="right" id="r-idr-${i}">Rp 0</td>
+    </tr>`;
+}
+
+function mount(){
+  const tbody = document.getElementById('body');
+  tbody.innerHTML = PRODUCTS.map((p,i)=>rowHTML(p,i)).join('');
+}
+
+function recalc(){
+  let sumK=0, sumU=0, sumI=0;
+  document.querySelectorAll('input.qty').forEach(inp=>{
+    const i = +inp.dataset.i;
+    const q = +inp.value||0;
+    const p = PRODUCTS[i];
+    const k = (p.krw??0)*q;
+    const u = (p.usd??0)*q;
+    const d = (p.idr??0)*q;
+    sumK += k; sumU += u; sumI += d;
+    document.getElementById('r-krw-'+i).textContent = fmtKRW(k);
+    document.getElementById('r-usd-'+i).textContent = fmtUSD(u);
+    document.getElementById('r-idr-'+i).textContent = fmtIDR(d);
+  });
+  document.getElementById('sum-krw').textContent = fmtKRW(sumK);
+  document.getElementById('sum-usd').textContent = fmtUSD(sumU);
+  document.getElementById('sum-idr').textContent = fmtIDR(sumI);
+  document.getElementById('sum2-krw').textContent = fmtKRW(sumK);
+  document.getElementById('sum2-usd').textContent = fmtUSD(sumU);
+  document.getElementById('sum2-idr').textContent = fmtIDR(sumI);
+}
+
+mount(); recalc();
+</script>
+<style>
+/* ===== Sticky Title + Totals (under title) ===== */
+@media (max-width: 640px){
+  /* make title stick */
+  h1{
+    position: sticky;
+    top: 0;
+    z-index: 1001;
+    margin: 0;
+    padding: 12px 16px;
+    background: inherit;
+  }
+  /* totals under title */
+  .totals{
+    position: sticky;
+    top: 56px;          /* sits right under the sticky title */
+    z-index: 1000;
+    width: 100%;
+    left: 0;
+    right: 0;
+    background: inherit;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+  }
+  /* give space so first rows aren't hidden behind sticky bars */
+  .wrap{ padding-top: 112px; }
+}
+
+/* ===== Quantity column stability ===== */
+table{ table-layout: fixed; width: 100%; }
+thead th:nth-child(5), tbody td:nth-child(5){
+  width: 120px;  /* fixed width for 수량 column */
+}
+input.qty{
+  width: 100%;
+  min-width: 0 !important;
+  max-width: 100%;
+  height: 52px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 20px;
+  line-height: 1.2;
+  transition: none;      /* prevent focus animations that cause jump */
+}
+input.qty:focus{
+  outline: none;
+  border-color: #bbb;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.05) inset;
+  transform: none;       /* avoid shrink/scale on focus */
+}
+
+</style>
+<style>
+/* ===== Force TOTALS to very top on mobile (always visible) ===== */
+@media (max-width: 640px){
+  :root{ --totals-height: 84px; }
+
+  /* Make totals fixed at viewport top regardless of original CSS */
+  .totals{
+    position: fixed !important;
+    top: 0 !important;
+    left: 0;
+    right: 0;
+    bottom: auto !important;
+    z-index: 2000;
+    width: 100%;
+    max-width: 100vw;
+    margin: 0;
+    border-radius: 0;
+  }
+  /* Ensure each totals box is compact to fit one row */
+  .totals{ grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .totals .box{ padding: 10px 12px; }
+  .totals .v{ font-size: 18px; }
+
+  /* Give page content spacing so it's not hidden behind fixed totals */
+  body, .wrap{ padding-top: calc(var(--totals-height) + 16px) !important; }
+
+  /* Keep title visible below totals (no extra sticky behavior needed) */
+  h1{ position: static !important; margin-top: 0; }
+
+  /* If any "bottom-sticky" style exists, neutralize it on mobile */
+  .totals.bottom, .totals.sticky-bottom, footer .totals{
+    display: none !important;
+  }
+}
+
+</style>
+<style>
+/* ===== Combine title + totals as a single top fixed block ===== */
+@media (max-width: 640px){
+  header.incamart-top{
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 3000;
+    background: inherit;
+    padding: 8px 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  header.incamart-top h1{
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    text-align: left;
+  }
+  header.incamart-top .totals{
+    position: static !important;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  body, .wrap{ padding-top: 120px !important; }
+}
+</style>
+
+<script>
+// ===== Clear '0' when focusing qty input, restore 0 if left empty =====
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input.qty').forEach(input => {
+    input.addEventListener('focus', () => {
+      if (input.value === '0') input.value = '';
+    });
+    input.addEventListener('blur', () => {
+      if (input.value.trim() === '') input.value = '0';
+    });
+  });
+
+  // Move h1 and totals together into a fixed header wrapper
+  const h1 = document.querySelector('h1');
+  const totals = document.querySelector('.totals');
+  if (h1 && totals) {
+    const header = document.createElement('header');
+    header.className = 'incamart-top';
+    h1.parentNode.insertBefore(header, h1);
+    header.appendChild(h1);
+    header.appendChild(totals);
+  }
+});
+</script>
+
+
+<script>
+// ===== Keep header (title + totals) visible even when mobile keyboard opens =====
+(function(){
+  function adjustHeader() {
+    const header = document.querySelector('header.incamart-top');
+    if (!header) return;
+    // Force fixed + top pin
+    header.style.position = 'fixed';
+    header.style.zIndex = '4000';
+    header.style.left = '0';
+    header.style.top = '0';
+
+    // Use VisualViewport if available (Android/Chrome, iOS Safari)
+    if (window.visualViewport) {
+      const vv = window.visualViewport;
+      // Translate header into the *visible* viewport area
+      const tx = vv.offsetLeft || 0;
+      const ty = vv.offsetTop || 0;
+      header.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+      header.style.width = vv.width + 'px';
+    } else {
+      // Fallback: no transform
+      header.style.transform = 'translate(0,0)';
+      header.style.width = '100%';
+    }
+
+    // Ensure content is not hidden under header
+    const h = header.getBoundingClientRect().height;
+    const wrap = document.querySelector('.wrap') || document.body;
+    wrap.style.paddingTop = (h + 12) + 'px';
+    document.documentElement.style.scrollPaddingTop = (h + 12) + 'px';
+  }
+
+  const ready = () => {
+    adjustHeader();
+    // Re-adjust on viewport changes, scroll, and orientation changes
+    if (window.visualViewport) {
+      visualViewport.addEventListener('resize', adjustHeader);
+      visualViewport.addEventListener('scroll', adjustHeader);
+    }
+    window.addEventListener('resize', adjustHeader);
+    window.addEventListener('orientationchange', adjustHeader);
+
+    // Re-run after input focus changes (keyboard open/close)
+    document.addEventListener('focusin', adjustHeader);
+    document.addEventListener('focusout', adjustHeader);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ready);
+  } else {
+    ready();
+  }
+})();
+</script>
+
+<style>
+/* ===== Solid backdrop for header to avoid blending with content ===== */
+@media (max-width: 640px){
+  header.incamart-top{
+    background: rgba(10,14,18,0.98) !important; /* solid dark */
+    backdrop-filter: none;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  header.incamart-top::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:-6px; height:6px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.18), rgba(0,0,0,0));
+    pointer-events:none;
+  }
+  header.incamart-top .totals .box{ background: #111821; }
+}
+
+/* ===== Compact mode when keyboard is open ===== */
+@media (max-width: 640px){
+  body.kb-open header.incamart-top{
+    padding: 6px 8px !important;
+  }
+  body.kb-open header.incamart-top h1{
+    font-size: 16px !important;
+    margin-bottom: 2px !important;
+  }
+  body.kb-open header.incamart-top .totals{
+    gap:6px !important;
+  }
+  body.kb-open header.incamart-top .totals .box{
+    padding: 6px 8px !important;
+  }
+  body.kb-open header.incamart-top .totals .v{
+    font-size: 16px !important;
+  }
+}
+</style>
+
+<script>
+// Shorten title and ensure visibility
+document.addEventListener('DOMContentLoaded', () => {
+  const h1 = document.querySelector('header.incamart-top h1, h1');
+  if (h1) h1.textContent = '(가격 자동 합산)';
+});
+
+// Add/remove compact mode on keyboard open/close
+(function(){
+  function setKbOpen(open){
+    document.body.classList.toggle('kb-open', !!open);
+  }
+  document.addEventListener('focusin', () => setKbOpen(true));
+  document.addEventListener('focusout', () => setKbOpen(false));
+  if (window.visualViewport){
+    visualViewport.addEventListener('resize', () => {
+      // Heuristic: if viewport height shrinks significantly, keyboard likely open
+      const open = (visualViewport.height || 0) < (window.innerHeight * 0.9);
+      setKbOpen(open);
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
