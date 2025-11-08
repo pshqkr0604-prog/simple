@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>인카마트 가격표 (간단형)</title>
+  <title>인카마트 가격표 (모든메뉴)</title>
   <style>
     :root{--bg:#0b0f14;--card:#121821;--muted:#9fb3c8;--txt:#e8f0f7;--border:#1f2a38;}
     *{box-sizing:border-box}
@@ -124,6 +124,16 @@ td, th{ vertical-align:middle; }
 }
 
 </style>
+
+  <!-- ✅ 추가: 좌우 스크롤 방지 전용 스타일 -->
+  <style>
+    html, body { max-width: 100%; overflow-x: hidden; }
+    /* 테이블 스크롤 컨테이너(인라인 스타일 override) */
+    .card > div { overflow-y: auto !important; overflow-x: hidden !important; }
+    /* 모바일에서 좌우 드래그로 가로 스크롤 시도 방지 */
+    body { overscroll-behavior-x: none; touch-action: pan-y; }
+  </style>
+  <!-- ✅ 추가 끝 -->
 </head>
 <body>
   <div class="wrap">
@@ -256,7 +266,7 @@ const PRODUCTS = [
     "stock": "nan"
   }
 ];
-
+  
 function fmtKRW(v){return '₩ ' + (Math.round(v)||0).toLocaleString('ko-KR');}
 function fmtUSD(v){return '$ ' + (Math.round((v+Number.EPSILON)*100)/100).toLocaleString('en-US');}
 function fmtIDR(v){return 'Rp ' + (Math.round(v)||0).toLocaleString('id-ID');}
@@ -569,6 +579,52 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })();
 </script>
+
+<!-- ===================== [여기부터 '초기화' 버튼 추가] ===================== -->
+<style>
+/* === 초기화 버튼 스타일 (상단 고정영역 바로 아래) === */
+header.incamart-top .actions{
+  margin-top:8px;
+  display:flex;
+  justify-content:flex-end;
+}
+header.incamart-top .btn-reset{
+  padding:8px 12px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.15);
+  background:#1a2432;
+  color:#e8f0f7;
+  font-weight:700;
+  font-size:14px;
+}
+header.incamart-top .btn-reset:active{
+  transform:translateY(1px);
+}
+</style>
+
+<script>
+/* === 초기화 버튼 생성 & 동작 === */
+document.addEventListener('DOMContentLoaded', () => {
+  // header(in camart-top)가 이미 만들어진 이후 실행
+  const header = document.querySelector('header.incamart-top');
+  const totals = header ? header.querySelector('.totals') : null;
+  if (header && totals){
+    // 버튼 영역 생성
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    actions.innerHTML = '<button type="button" class="btn-reset" id="btn-reset">초기화</button>';
+    header.appendChild(actions);
+
+    // 클릭 시: 모든 수량 0 → 합계 재계산
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      document.querySelectorAll('input.qty').forEach(inp => { inp.value = '0'; });
+      if (typeof recalc === 'function') recalc();
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    });
+  }
+});
+</script>
+<!-- ===================== [초기화 버튼 추가 끝] ===================== -->
 
 </body>
 </html>
