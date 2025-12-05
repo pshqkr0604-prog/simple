@@ -19,15 +19,13 @@
       background:var(--bg);
       color:var(--txt);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,Malgun Gothic,sans-serif;
-      max-width:100%;
-      overflow-x:hidden;
     }
 
     /* ------------ 공통 레이아웃 ------------ */
     .wrap{
       max-width:1100px;
       margin:0 auto;
-      padding:96px 12px 24px; /* 상단 헤더 높이만큼 여백 */
+      padding:136px 12px 24px; /* 헤더 높이만큼 위쪽 여백 */
     }
 
     table{
@@ -43,6 +41,7 @@
     td.right,th.right{text-align:right;}
 
     .muted{color:var(--muted);}
+    .stock{font-size:12px;color:#b7c8d8;}
 
     /* ------------ 상단 고정 헤더 (제목 + 합계 + 초기화) ------------ */
     header.incamart-top{
@@ -58,31 +57,31 @@
     header.incamart-top .inner{
       max-width:1100px;
       margin:0 auto;
-      padding:4px 8px 6px;
+      padding:10px 12px 12px;
     }
     header.incamart-top .top-row{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:6px;
-      margin-bottom:4px;
+      gap:8px;
+      margin-bottom:8px;
     }
     header.incamart-top h1{
       margin:0;
-      font-size:14px;
+      font-size:18px;
       font-weight:700;
     }
     header.incamart-top .actions{
       flex-shrink:0;
     }
     header.incamart-top .btn-reset{
-      padding:5px 9px;
+      padding:7px 12px;
       border-radius:10px;
       border:1px solid rgba(255,255,255,0.18);
       background:#1a2432;
       color:#e8f0f7;
       font-weight:600;
-      font-size:12px;
+      font-size:13px;
     }
     header.incamart-top .btn-reset:active{
       transform:translateY(1px);
@@ -92,21 +91,21 @@
     .totals{
       display:grid;
       grid-template-columns:repeat(3,1fr);
-      gap:6px;
+      gap:8px;
     }
     .totals .box{
       background:#111821;
       border:1px solid var(--border);
       border-radius:12px;
-      padding:8px 10px;
+      padding:10px 12px;
     }
     .totals .label{
       font-size:11px;
       color:var(--muted);
-      margin-bottom:2px;
+      margin-bottom:4px;
     }
     .totals .v{
-      font-size:15px;
+      font-size:18px;
       font-weight:800;
     }
 
@@ -118,8 +117,9 @@
       overflow:hidden;
     }
 
-    /* 리스트 영역: 높이는 JS에서 화면에 맞춰 계산. 여기서는 스크롤만 지정 */
+    /* 테이블 헤더(상품명/수량) 고정 */
     .table-wrap{
+      max-height:calc(100vh - 220px); /* 헤더+여백 제외 높이 */
       overflow-y:auto;
       overflow-x:hidden;
     }
@@ -131,26 +131,20 @@
       z-index:5;
     }
 
-    /* ===== 수량 입력칸 (가로·세로 완전 고정) ===== */
+    /* 수량 입력칸 */
     input.qty{
-      box-sizing:border-box;
-      display:block;
       width:100%;
-      min-width:100%;
-      max-width:100%;
+      min-width:0;
+      min-height:44px;
       height:46px;
-      min-height:46px;
-      max-height:46px;
       padding:10px 12px;
-      font-size:18px;
-      line-height:1.2;
-      border-radius:14px;
+      font-size:16px;
+      border-radius:12px;
       border:1px solid var(--border);
       background:#0c121a;
       color:var(--txt);
       -webkit-appearance:none;
       appearance:none;
-      transition:none;
     }
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button{
@@ -159,51 +153,39 @@
     }
     input[type=number]{-moz-appearance:textfield;}
 
-    /* 포커스 상태에서도 크기 불변 */
-    input.qty:focus{
-      outline:none;
-      border-color:#f5c14b;
-      box-shadow:0 0 0 2px rgba(245,193,75,0.6);
-      width:100%;
-      min-width:100%;
-      max-width:100%;
-      height:46px;
-      min-height:46px;
-      max-height:46px;
-      padding:10px 12px;
-      font-size:18px;
-    }
-
+    /* 수량 컬럼 고정 폭 */
     thead th:nth-child(5),
     tbody td:nth-child(5){
       width:120px;
     }
 
+    /* 테이블 맨 아래 총합 */
     tfoot td{font-weight:800;}
 
     /* ------------ 모바일 최적화 (<=640px) ------------ */
     @media (max-width:640px){
       header.incamart-top .inner{
-        padding:4px 8px 6px;
+        padding:8px 10px 10px;
       }
       header.incamart-top h1{
-        font-size:13px;
+        font-size:16px;
       }
       .wrap{
-        padding:88px 10px 20px;
+        padding:128px 10px 20px;
       }
 
+      /* 합계 상자 조금 더 촘촘하게 */
       .totals{
-        gap:4px;
+        gap:6px;
       }
       .totals .box{
-        padding:7px 9px;
+        padding:8px 10px;
       }
       .totals .v{
-        font-size:14px;
+        font-size:16px;
       }
 
-      /* 모바일: 단가/합계 숨기고, 상품명+수량만 */
+      /* 상품테이블: 단가/합계 숨기고, 상품명+수량만 */
       thead th:nth-child(2),
       thead th:nth-child(3),
       thead th:nth-child(4),
@@ -227,6 +209,21 @@
       tbody td:nth-child(5){
         text-align:right;
       }
+
+      input.qty{
+        height:48px;
+        font-size:18px;
+      }
+
+      .table-wrap{
+        max-height:calc(100vh - 230px);
+      }
+    }
+
+    /* 좌우 스크롤 방지 */
+    html,body{
+      max-width:100%;
+      overflow-x:hidden;
     }
   </style>
 </head>
@@ -316,6 +313,7 @@
       <tr>
         <td>
           <div>${p.name}</div>
+          ${p.stock?`<div class="stock">재고: ${p.stock}</div>`:''}
         </td>
         <td class="right">${p.krw!=null?fmtKRW(p.krw):'-'}</td>
         <td class="right">${p.usd!=null?fmtUSD(p.usd):'-'}</td>
@@ -366,33 +364,18 @@
     document.getElementById('sum2-idr').textContent = fmtIDR(sumI);
   }
 
-  // 화면(특히 모바일 키보드 포함) 높이에 맞춰 리스트 영역 높이 조정
-  function adjustTableHeight(){
-    const tw = document.querySelector('.table-wrap');
-    if (!tw) return;
-    const rect = tw.getBoundingClientRect();
-    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-    const available = vh - rect.top - 8;  // 아래쪽 8px 여유
-    if (available > 0){
-      tw.style.maxHeight = available + 'px';
-    }
-  }
-
   document.addEventListener('DOMContentLoaded', () => {
     mount();
     recalc();
-    adjustTableHeight();
 
     // 수량 포커스 시 0 지우고, 비워두면 다시 0
-    document.addEventListener('focusin', e => {
-      if (e.target.classList && e.target.classList.contains('qty')){
-        if (e.target.value === '0') e.target.value = '';
-      }
-    });
-    document.addEventListener('focusout', e => {
-      if (e.target.classList && e.target.classList.contains('qty')){
-        if (e.target.value.trim() === '') e.target.value = '0';
-      }
+    document.querySelectorAll('tbody input.qty').forEach(input => {
+      input.addEventListener('focus', () => {
+        if (input.value === '0') input.value = '';
+      });
+      input.addEventListener('blur', () => {
+        if (input.value.trim() === '') input.value = '0';
+      });
     });
 
     // 초기화 버튼
@@ -401,14 +384,6 @@
       recalc();
       window.scrollTo({top:0,behavior:'smooth'});
     });
-
-    // 화면/키보드 변화에 맞춰 다시 계산
-    if (window.visualViewport){
-      visualViewport.addEventListener('resize', adjustTableHeight);
-      visualViewport.addEventListener('scroll', adjustTableHeight);
-    }
-    window.addEventListener('resize', adjustTableHeight);
-    window.addEventListener('orientationchange', adjustTableHeight);
   });
 </script>
 
