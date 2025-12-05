@@ -24,11 +24,10 @@
     }
 
     /* ------------ 공통 레이아웃 ------------ */
-    /* 상단 헤더 높이에 맞춰 적당히 여백 (이전 104px → 96px) */
     .wrap{
       max-width:1100px;
       margin:0 auto;
-      padding:96px 12px 24px;
+      padding:96px 12px 24px; /* 상단 헤더 높이만큼 여백 */
     }
 
     table{
@@ -60,18 +59,18 @@
     header.incamart-top .inner{
       max-width:1100px;
       margin:0 auto;
-      padding:4px 8px 6px;   /* 살짝 줄인 패딩 */
+      padding:4px 8px 6px;
     }
     header.incamart-top .top-row{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:6px;
-      margin-bottom:4px;     /* 기존 8px → 4px */
+      margin-bottom:4px;
     }
     header.incamart-top h1{
       margin:0;
-      font-size:14px;        /* 기존 15px → 14px */
+      font-size:14px;
       font-weight:700;
     }
     header.incamart-top .actions{
@@ -100,7 +99,7 @@
       background:#111821;
       border:1px solid var(--border);
       border-radius:12px;
-      padding:8px 10px;   /* 기존보다 약간만 작게 */
+      padding:8px 10px;
     }
     .totals .label{
       font-size:11px;
@@ -108,11 +107,11 @@
       margin-bottom:2px;
     }
     .totals .v{
-      font-size:15px;        /* 기존 16px → 15px */
+      font-size:15px;
       font-weight:800;
     }
 
-    /* ------------ 상품 테이블 카드 (이전 버전 그대로) ------------ */
+    /* ------------ 상품 테이블 카드 ------------ */
     .card{
       background:var(--card);
       border:1px solid var(--border);
@@ -120,9 +119,8 @@
       overflow:hidden;
     }
 
-    /* 테이블 헤더(상품명/수량) 고정 – 리스트 부만 스크롤 */
+    /* 리스트 영역: 높이는 JS에서 화면에 맞춰 계산. 여기서는 스크롤만 지정 */
     .table-wrap{
-      max-height:calc(100vh - 190px); /* 상단 줄인 이전 버전 값 그대로 */
       overflow-y:auto;
       overflow-x:hidden;
     }
@@ -134,7 +132,7 @@
       z-index:5;
     }
 
-    /* 수량 입력칸 (이전 “상단 여백 최소화 버전” 그대로) */
+    /* 수량 입력칸 */
     input.qty{
       width:100%;
       min-width:0;
@@ -172,7 +170,7 @@
         font-size:13px;
       }
       .wrap{
-        padding:88px 10px 20px;  /* 이전 96px → 88px */
+        padding:88px 10px 20px;
       }
 
       .totals{
@@ -185,7 +183,7 @@
         font-size:14px;
       }
 
-      /* 상품테이블: 단가/합계 숨기고, 상품명+수량만 */
+      /* 모바일: 단가/합계 숨기고, 상품명+수량만 */
       thead th:nth-child(2),
       thead th:nth-child(3),
       thead th:nth-child(4),
@@ -213,10 +211,6 @@
       input.qty{
         height:44px;
         font-size:17px;
-      }
-
-      .table-wrap{
-        max-height:calc(100vh - 185px); /* 이전 버전값 그대로 */
       }
     }
   </style>
@@ -358,9 +352,22 @@
     document.getElementById('sum2-idr').textContent = fmtIDR(sumI);
   }
 
+  // 화면(특히 모바일 키보드 포함) 높이에 맞춰 리스트 영역 높이 조정
+  function adjustTableHeight(){
+    const tw = document.querySelector('.table-wrap');
+    if (!tw) return;
+    const rect = tw.getBoundingClientRect();
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const available = vh - rect.top - 8;  // 아래쪽 8px 여유
+    if (available > 0){
+      tw.style.maxHeight = available + 'px';
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     mount();
     recalc();
+    adjustTableHeight();
 
     // 수량 포커스 시 0 지우고, 비워두면 다시 0
     document.addEventListener('focusin', e => {
@@ -380,6 +387,14 @@
       recalc();
       window.scrollTo({top:0,behavior:'smooth'});
     });
+
+    // 화면/키보드 변화에 맞춰 다시 계산
+    if (window.visualViewport){
+      visualViewport.addEventListener('resize', adjustTableHeight);
+      visualViewport.addEventListener('scroll', adjustTableHeight);
+    }
+    window.addEventListener('resize', adjustTableHeight);
+    window.addEventListener('orientationchange', adjustTableHeight);
   });
 </script>
 
