@@ -131,13 +131,16 @@
       z-index:5;
     }
 
-    /* ===== 수량 입력칸 (크기 고정) ===== */
+    /* ===== 수량 입력칸 (가로·세로 완전 고정) ===== */
     input.qty{
       box-sizing:border-box;
+      display:block;
       width:100%;
-      min-width:0;
+      min-width:100%;
+      max-width:100%;
       height:46px;
       min-height:46px;
+      max-height:46px;
       padding:10px 12px;
       font-size:18px;
       line-height:1.2;
@@ -156,13 +159,17 @@
     }
     input[type=number]{-moz-appearance:textfield;}
 
-    /* 포커스 / 입력 상태에서도 크기 그대로 유지 */
+    /* 포커스 상태에서도 크기 불변 */
     input.qty:focus{
       outline:none;
       border-color:#f5c14b;
       box-shadow:0 0 0 2px rgba(245,193,75,0.6);
+      width:100%;
+      min-width:100%;
+      max-width:100%;
       height:46px;
       min-height:46px;
+      max-height:46px;
       padding:10px 12px;
       font-size:18px;
     }
@@ -220,8 +227,6 @@
       tbody td:nth-child(5){
         text-align:right;
       }
-
-      /* 모바일에서도 동일 크기 유지 (덮어쓰기 없음) */
     }
   </style>
 </head>
