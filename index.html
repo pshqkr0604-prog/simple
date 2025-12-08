@@ -34,6 +34,7 @@
     table{
       width:100%;
       border-collapse:collapse;
+      table-layout:fixed; /* 각 열 폭 고정 레이아웃 */
     }
     th,td{
       border-bottom:1px solid #1b2431;
@@ -131,27 +132,27 @@
       z-index:5;
     }
 
-    /* ===== 수량 입력칸 (가로·세로 완전 고정 + !important) ===== */
+    /* ===== 수량 입력칸 (가로·세로 완전 고정) ===== */
     input.qty{
-      box-sizing:border-box !important;
-      display:block !important;
-      width:100% !important;
-      min-width:100% !important;
-      max-width:100% !important;
-      height:46px !important;
-      min-height:46px !important;
-      max-height:46px !important;
-      padding:10px 12px !important;
-      font-size:18px !important;
-      line-height:1.2 !important;
-      border-radius:14px !important;
-      border:1px solid var(--border) !important;
-      background:#0c121a !important;
-      color:var(--txt) !important;
-      text-align:center !important;
-      -webkit-appearance:none !important;
-      appearance:none !important;
-      transition:none !important;
+      box-sizing:border-box;
+      display:block;
+      width:100%;
+      min-width:100%;
+      max-width:100%;
+      height:46px;
+      min-height:46px;
+      max-height:46px;
+      padding:10px 12px;
+      font-size:18px;
+      line-height:1.2;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:#0c121a;
+      color:var(--txt);
+      text-align:center;
+      -webkit-appearance:none;
+      appearance:none;
+      transition:none;
     }
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button{
@@ -160,24 +161,38 @@
     }
     input[type=number]{-moz-appearance:textfield;}
 
-    /* 포커스 상태에서도 크기 완전 고정 */
+    /* 포커스 상태에서도 크기 불변 */
     input.qty:focus{
-      outline:none !important;
-      border-color:#f5c14b !important;
-      box-shadow:0 0 0 2px rgba(245,193,75,0.6) !important;
-      width:100% !important;
-      min-width:100% !important;
-      max-width:100% !important;
-      height:46px !important;
-      min-height:46px !important;
-      max-height:46px !important;
-      padding:10px 12px !important;
-      font-size:18px !important;
+      outline:none;
+      border-color:#f5c14b;
+      box-shadow:0 0 0 2px rgba(245,193,75,0.6);
+      width:100%;
+      min-width:100%;
+      max-width:100%;
+      height:46px;
+      min-height:46px;
+      max-height:46px;
+      padding:10px 12px;
+      font-size:18px;
     }
 
+    /* 5번째 열(수량) 폭 고정 */
     thead th:nth-child(5),
     tbody td:nth-child(5){
       width:120px;
+    }
+
+    /* 6~8번째 열(합계) 폭 제한 + 말줄임표 처리 → 수량 칸 안 줄어들게 */
+    thead th:nth-child(6),
+    thead th:nth-child(7),
+    thead th:nth-child(8),
+    tbody td:nth-child(6),
+    tbody td:nth-child(7),
+    tbody td:nth-child(8){
+      max-width:110px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     tfoot td{font-weight:800;}
@@ -365,9 +380,22 @@
     document.getElementById('sum2-idr').textContent = fmtIDR(sumI);
   }
 
+  // 화면 높이에 맞춰 리스트 영역 조정
+  function adjustTableHeight(){
+    const tw = document.querySelector('.table-wrap');
+    if (!tw) return;
+    const rect = tw.getBoundingClientRect();
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const available = vh - rect.top - 8;  // 아래쪽 여유
+    if (available > 0){
+      tw.style.maxHeight = available + 'px';
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     mount();
     recalc();
+    adjustTableHeight();
 
     // 수량 포커스 시 0 지우고, 비워두면 다시 0
     document.addEventListener('focusin', e => {
@@ -383,11 +411,17 @@
 
     // 초기화 버튼
     document.getElementById('btn-reset').addEventListener('click', () => {
-      document.querySelectorAll('input.qty').forEach(inp => inp.value = '0';
-      );
+      document.querySelectorAll('input.qty').forEach(inp => inp.value = '0');
       recalc();
       window.scrollTo({top:0,behavior:'smooth'});
     });
+
+    if (window.visualViewport){
+      visualViewport.addEventListener('resize', adjustTableHeight);
+      visualViewport.addEventListener('scroll', adjustTableHeight);
+    }
+    window.addEventListener('resize', adjustTableHeight);
+    window.addEventListener('orientationchange', adjustTableHeight);
   });
 </script>
 
