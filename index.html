@@ -131,26 +131,27 @@
       z-index:5;
     }
 
-    /* ===== 수량 입력칸 (가로·세로 완전 고정) ===== */
+    /* ===== 수량 입력칸 (가로·세로 완전 고정 + !important) ===== */
     input.qty{
-      box-sizing:border-box;
-      display:block;
-      width:100%;
-      min-width:100%;
-      max-width:100%;
-      height:46px;
-      min-height:46px;
-      max-height:46px;
-      padding:10px 12px;
-      font-size:18px;
-      line-height:1.2;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:#0c121a;
-      color:var(--txt);
-      -webkit-appearance:none;
-      appearance:none;
-      transition:none;
+      box-sizing:border-box !important;
+      display:block !important;
+      width:100% !important;
+      min-width:100% !important;
+      max-width:100% !important;
+      height:46px !important;
+      min-height:46px !important;
+      max-height:46px !important;
+      padding:10px 12px !important;
+      font-size:18px !important;
+      line-height:1.2 !important;
+      border-radius:14px !important;
+      border:1px solid var(--border) !important;
+      background:#0c121a !important;
+      color:var(--txt) !important;
+      text-align:center !important;
+      -webkit-appearance:none !important;
+      appearance:none !important;
+      transition:none !important;
     }
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button{
@@ -161,17 +162,17 @@
 
     /* 포커스 상태에서도 크기 완전 고정 */
     input.qty:focus{
-      outline:none;
-      border-color:#f5c14b;
-      box-shadow:0 0 0 2px rgba(245,193,75,0.6);
-      width:100%;
-      min-width:100%;
-      max-width:100%;
-      height:46px;
-      min-height:46px;
-      max-height:46px;
-      padding:10px 12px;
-      font-size:18px;
+      outline:none !important;
+      border-color:#f5c14b !important;
+      box-shadow:0 0 0 2px rgba(245,193,75,0.6) !important;
+      width:100% !important;
+      min-width:100% !important;
+      max-width:100% !important;
+      height:46px !important;
+      min-height:46px !important;
+      max-height:46px !important;
+      padding:10px 12px !important;
+      font-size:18px !important;
     }
 
     thead th:nth-child(5),
@@ -382,7 +383,8 @@
 
     // 초기화 버튼
     document.getElementById('btn-reset').addEventListener('click', () => {
-      document.querySelectorAll('input.qty').forEach(inp => inp.value = '0');
+      document.querySelectorAll('input.qty').forEach(inp => inp.value = '0';
+      );
       recalc();
       window.scrollTo({top:0,behavior:'smooth'});
     });
