@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>인카마트 가격표 (모든메뉴)</title>
+
   <style>
     :root{
       --bg:#0b0f14;
@@ -33,6 +34,7 @@
     table{
       width:100%;
       border-collapse:collapse;
+      table-layout:fixed; /* 각 열 폭 고정 레이아웃 */
     }
     th,td{
       border-bottom:1px solid #1b2431;
@@ -118,7 +120,6 @@
       overflow:hidden;
     }
 
-    /* 리스트 영역: 높이는 JS에서 화면에 맞춰 계산. 여기서는 스크롤만 지정 */
     .table-wrap{
       overflow-y:auto;
       overflow-x:hidden;
@@ -148,6 +149,7 @@
       border:1px solid var(--border);
       background:#0c121a;
       color:var(--txt);
+      text-align:center;
       -webkit-appearance:none;
       appearance:none;
       transition:none;
@@ -174,9 +176,23 @@
       font-size:18px;
     }
 
+    /* 5번째 열(수량) 폭 고정 */
     thead th:nth-child(5),
     tbody td:nth-child(5){
       width:120px;
+    }
+
+    /* 6~8번째 열(합계) 폭 제한 + 말줄임표 처리 → 수량 칸 안 줄어들게 */
+    thead th:nth-child(6),
+    thead th:nth-child(7),
+    thead th:nth-child(8),
+    tbody td:nth-child(6),
+    tbody td:nth-child(7),
+    tbody td:nth-child(8){
+      max-width:110px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     tfoot td{font-weight:800;}
@@ -219,38 +235,13 @@
         display:none;
       }
 
-      /* 👉 모바일에서 정렬/간격 깔끔하게 정리 */
-      thead th:nth-child(1){
-        width:auto;
-        text-align:left;
-        padding-left:12px;
-      }
-      tbody td:nth-child(1){
-        padding-left:12px;
-      }
-
+      thead th:nth-child(1){width:auto;}
       thead th:nth-child(5){
-        width:120px;
-        text-align:center;
-        padding-right:12px;
+        text-align:right;
+        width:110px;
       }
       tbody td:nth-child(5){
-        text-align:center;
-        padding-right:12px;
-      }
-
-      /* 수량 입력칸은 살짝 더 크게 */
-      input.qty{
-        height:48px;
-        min-height:48px;
-        max-height:48px;
-        font-size:18px;
-      }
-      input.qty:focus{
-        height:48px;
-        min-height:48px;
-        max-height:48px;
-        font-size:18px;
+        text-align:right;
       }
     }
   </style>
@@ -389,13 +380,13 @@
     document.getElementById('sum2-idr').textContent = fmtIDR(sumI);
   }
 
-  // 화면(특히 모바일 키보드 포함) 높이에 맞춰 리스트 영역 높이 조정
+  // 화면 높이에 맞춰 리스트 영역 조정
   function adjustTableHeight(){
     const tw = document.querySelector('.table-wrap');
     if (!tw) return;
     const rect = tw.getBoundingClientRect();
     const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-    const available = vh - rect.top - 8;  // 아래쪽 8px 여유
+    const available = vh - rect.top - 8;  // 아래쪽 여유
     if (available > 0){
       tw.style.maxHeight = available + 'px';
     }
