@@ -235,13 +235,33 @@
         display:none;
       }
 
-      thead th:nth-child(1){width:auto;}
-      thead th:nth-child(5){
-        text-align:right;
-        width:110px;
+      /* 👉 상품명 65% + 수량 35%로 화면 꽉 채우기 */
+      thead th:nth-child(1),
+      tbody td:nth-child(1){
+        width:65% !important;
+        padding-left:12px;
+        text-align:left;
       }
+
+      thead th:nth-child(5),
       tbody td:nth-child(5){
-        text-align:right;
+        width:35% !important;
+        padding-right:12px;
+        text-align:center;   /* 수량 숫자/헤더 중앙 정렬 */
+      }
+
+      /* 수량 입력칸 조금 더 크게 (모바일 전용) */
+      input.qty{
+        height:48px;
+        min-height:48px;
+        max-height:48px;
+        font-size:18px;
+      }
+      input.qty:focus{
+        height:48px;
+        min-height:48px;
+        max-height:48px;
+        font-size:18px;
       }
     }
   </style>
